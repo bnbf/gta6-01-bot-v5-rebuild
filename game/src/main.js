@@ -252,7 +252,8 @@ function runSelfTest() {
   // Walk.
   const px = G.player.x; G.keys['d'] = true; updatePlayer(G, 0.5); G.keys['d'] = false;
   check('walk moves', () => Math.abs(G.player.x - px) > 20);
-  // Steal.
+  // Steal. Guarantee a parked car next to the player so the check is deterministic.
+  G.cars.push(makeCar(G, G.player.x + 50, G.player.y, { parked: true }));
   const near = G.cars.find((c) => c.parked && dist(c.x, c.y, G.player.x, G.player.y) < 400);
   if (near) { G.player.x = near.x; G.player.y = near.y; }
   check('steal car', () => trySteal(G) && !G.player.onFoot && !!G.player.car);
