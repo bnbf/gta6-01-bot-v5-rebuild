@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LUMEN BAY — Neon Heat</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' fill='%23ff2e88'/></svg>">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #0b0b1e; font-family: monospace; }
+  #game { display: block; background: #0b0b1e; cursor: crosshair; }
+  #hud { position: fixed; inset: 0; pointer-events: none; color: #fff; font-size: 14px; }
+  #hud-top { position: absolute; top: 10px; left: 12px; text-shadow: 1px 1px 2px #000; line-height: 1.5; }
+  #hud-wanted { font-size: 22px; letter-spacing: 2px; }
+  #hud-cash { color: #7dff5e; font-size: 22px; font-weight: bold; }
+  #hud-hp-wrap { width: 180px; height: 12px; background: #222; border: 1px solid #555; margin-top: 2px; }
+  #hud-hp { height: 100%; width: 100%; background: #7dff5e; }
+  #hud-objective { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); background: rgba(8,10,24,0.85); border: 1px solid #2ec8ff; padding: 8px 18px; font-size: 15px; max-width: 640px; text-align: center; }
+  #hud-mission { position: absolute; top: 52px; left: 50%; transform: translateX(-50%); color: #ffd23e; font-size: 13px; text-shadow: 1px 1px 2px #000; }
+  #hud-msg { position: absolute; top: 90px; left: 50%; transform: translateX(-50%); color: #ffd23e; font-size: 15px; text-shadow: 1px 1px 2px #000; }
+  #hud-bottom { position: absolute; bottom: 10px; left: 12px; text-shadow: 1px 1px 2px #000; line-height: 1.5; }
+  .w-sel { color: #ffd23e; font-weight: bold; }
+  .screen { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(5,5,18,0.82); color: #fff; text-align: center; z-index: 10; }
+  .screen h1 { font-size: 64px; color: #ff2e88; letter-spacing: 4px; text-shadow: 0 0 24px #ff2e88; }
+  .screen h2 { font-size: 30px; color: #ffd23e; letter-spacing: 6px; margin: 6px 0 18px; }
+  .screen p { font-size: 16px; line-height: 1.8; max-width: 820px; }
+  .screen .go { color: #7dff5e; font-size: 19px; margin-top: 22px; }
+  .screen .fine { color: #9fb0d0; font-size: 13px; margin-top: 18px; line-height: 1.6; }
+  #screen-pause, #screen-over { display: none; }
+  #screen-menu { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); display: none; background: rgba(8,10,24,0.95); border: 2px solid #2ec8ff; color: #fff; padding: 20px 26px; z-index: 11; min-width: 520px; font-size: 14px; }
+  #screen-menu h2 { color: #ffd23e; margin-bottom: 8px; }
+  #screen-menu .row { display: flex; justify-content: space-between; gap: 14px; align-items: center; padding: 6px 0; border-bottom: 1px solid #223; }
+  #screen-menu button { pointer-events: auto; background: #ff2e88; color: #fff; border: none; padding: 4px 12px; font-family: monospace; cursor: pointer; }
+  #test-results { position: fixed; left: 8px; bottom: 8px; display: none; background: rgba(0,0,0,0.85); color: #7dff5e; font-size: 12px; padding: 8px; z-index: 20; white-space: pre; max-height: 60vh; overflow: auto; }
+</style>
+</head>
+<body>
+<canvas id="game" width="1280" height="720"></canvas>
+<div id="hud">
+  <div id="hud-top">
+    <div id="hud-wanted">☆☆☆☆☆</div>
+    <div style="color:#9fb0d0;font-size:11px">WANTED</div>
+    <div id="hud-cash">$250</div>
+    <div id="hud-hp-wrap"><div id="hud-hp"></div></div>
+    <div id="hud-hp-text">HP 100</div>
+    <div id="hud-weapon">Pistol ∞ / ∞</div>
+    <div id="hud-speed">0 mph</div>
+    <div id="hud-car"></div>
+    <div id="hud-clock">18:40</div>
+    <div id="hud-rank">Street Punk · 0 pts</div>
+    <div id="hud-district" style="color:#2ec8ff">Downtown</div>
+    <div id="hud-radio">Radio: off — press R in a car</div>
+    <div id="hud-weapons"></div>
+  </div>
+  <div id="hud-objective"></div>
+  <div id="hud-mission"></div>
+  <div id="hud-msg"></div>
+  <div id="hud-bottom"></div>
+</div>
+<div id="screen-title" class="screen">
+  <h1>LUMEN BAY</h1>
+  <h2>— NEON HEAT —</h2>
+  <p>12 story missions · 6 named districts · police helicopter + roadblocks<br>
+  4 weapons · drive-by shooting · 4 radio stations · garage upgrades + paint<br>
+  Shops · safehouse · NOS · street races · taxi fares · saves<br>
+  Golden dusk 18:40 fades to neon night 20:00 — steal cars, outrun the PD,<br>
+  climb from Street Punk to King of the Bay.</p>
+  <p class="go">Press ENTER to play — WASD drive/walk · mouse aim · click shoot<br>
+  E steal / exit / use shops · Shift run / NOS · R radio · 1–4 weapons · T taxi/race · P pause</p>
+  <p class="fine">An original game. Nothing from any commercial game. Built for make.fun — bounty gta6-01.<br>
+  Milo Kade · Vera Solano · Big Lou — welcome to Lumen Bay.</p>
+</div>
+<div id="screen-pause" class="screen"><h1>PAUSED</h1><p class="go">Press P to resume</p></div>
+<div id="screen-over" class="screen">
+  <h1 id="over-title">BUSTED!</h1>
+  <p id="over-sub"></p>
+  <p id="over-stats"></p>
+  <p class="go">Press ENTER to continue</p>
+</div>
+<div id="screen-menu"></div>
+<pre id="test-results"></pre>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
